@@ -21,20 +21,30 @@ async function listAssignments() {
     return await store.getAssignments()
 }
 
-/**
- * Converts time string to minutes
- */
-function timeToMinutes(timeStr) {
-    const parts = timeStr.split(":")
-    return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10)
-}
+
+
 
 /**
- * Calculates shift duration in hours
+ * Computes the duration of a shift in hours.
+ *
+ * LLM used: ChatGPT (OpenAI)
+ * Prompt: "Write a JavaScript function computeShiftDuration(startTime, endTime)
+ * that returns the number of hours as a real number between two times in HH:MM format."
+ *
+ * @param {string} startTime - Shift start time (HH:MM)
+ * @param {string} endTime - Shift end time (HH:MM)
+ * @returns {number} Duration in hours
  */
-function shiftDurationHours(shift) {
-    return (timeToMinutes(shift.end) - timeToMinutes(shift.start)) / 60
+function computeShiftDuration(startTime, endTime) {
+    const startParts = startTime.split(":")
+    const endParts = endTime.split(":")
+
+    const startMinutes = (parseInt(startParts[0], 10) * 60) + parseInt(startParts[1], 10)
+    const endMinutes = (parseInt(endParts[0], 10) * 60) + parseInt(endParts[1], 10)
+
+    return (endMinutes - startMinutes) / 60
 }
+
 
 /**
  * Assigns employee to shift with hour limit check
@@ -65,12 +75,13 @@ async function assignShift(employeeId, shiftId) {
         if (a.employeeId === employeeId) {
             const s = await store.findShift(a.shiftId)
             if (s !== null && s.day === newShift.day) {
-                totalHours += shiftDurationHours(s)
+                totalHours += computeShiftDuration(s.start, s.end)
+
             }
         }
     }
 
-    if (totalHours + shiftDurationHours(newShift) > maxDailyHours) {
+    if (totalHours + computeShiftDuration(newShift.start, newShift.end) > maxDailyHours) {
         return { success: false, message: "Cannot assign shift. Daily hours limit exceeded." }
     }
 
