@@ -1,5 +1,20 @@
 const store = require("./persistence")
 
+
+function timeToMinutes(timeStr) {
+    const parts = timeStr.split(":")
+    const h = parseInt(parts[0], 10)
+    const m = parseInt(parts[1], 10)
+    return (h * 60) + m
+}
+
+function shiftDurationHours(shift) {
+    const startMin = timeToMinutes(shift.start)
+    const endMin = timeToMinutes(shift.end)
+    const diff = endMin - startMin
+    return diff / 60
+}
+
 async function listEmployees() {
     return await store.getEmployees()
 }
@@ -38,14 +53,36 @@ async function assignShift(employeeId, shiftId) {
         return { success: false, message: "Employee not found." }
     }
 
-    const shift = await store.findShift(shiftId)
-    if (shift === null) {
+    const newShift = await store.findShift(shiftId)
+    if (newShift === null) {
         return { success: false, message: "Shift not found." }
     }
 
     const existingAssignment = await store.findAssignment(employeeId, shiftId)
     if (existingAssignment !== null) {
         return { success: false, message: "Employee already assigned to this shift." }
+    }
+
+    const maxDailyHours = await store.getMaxDailyHours()
+
+    const assignments = await store.getAssignments()
+    let totalHours = 0
+
+    for (let i = 0; i < assignments.length; i++) {
+        const a = assignments[i]
+        if (a.employeeId === employeeId) {
+            const s = await store.findShift(a.shiftId)
+            if (s !== null && s.day === newShift.day) {
+                totalHours = totalHours + shiftDurationHours(s)
+            }
+        }
+    }
+
+    const newHours = shiftDurationHours(newShift)
+    const finalHours = totalHours + newHours
+
+    if (finalHours > maxDailyHours) {
+        return { success: false, message: "Cannot assign shift. Daily hours limit exceeded." }
     }
 
     await store.addAssignment(employeeId, shiftId)
