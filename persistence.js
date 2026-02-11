@@ -8,13 +8,43 @@ const configFile = "./config.json"
 /**
  * Reads JSON file safely
  */
+/**
+ * Reads JSON file safely (returns [] on error)
+ * @param {string} file
+ * @returns {Promise<Array>}
+ */
 async function readJson(file) {
     try {
         const text = await fs.readFile(file, "utf-8")
         return JSON.parse(text)
-    } catch {
+    } catch (err) {
+        const debugLevel = getDebugLevel()
+
+        if (debugLevel >= 1) {
+            console.log("Error reading file: " + file)
+        }
+
+        if (debugLevel >= 2) {
+            console.log(err)
+        }
+
         return []
     }
+}
+
+/**
+ * Returns DEBUG_LEVEL as a number (0, 1, 2...)
+ * @returns {number}
+ */
+function getDebugLevel() {
+    const raw = process.env.DEBUG_LEVEL
+    const level = parseInt(raw, 10)
+
+    if (isNaN(level)) {
+        return 0
+    }
+
+    return level
 }
 
 /**

@@ -1,5 +1,7 @@
 const prompt = require("prompt-sync")()
 const business = require("./business")
+require("dotenv").config()
+
 
 /**
  * Displays main menu and handles user choices
