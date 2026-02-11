@@ -1,13 +1,17 @@
 const prompt = require("prompt-sync")()
 const business = require("./business")
 
+/**
+ * Displays main menu and handles user choices
+ */
 async function mainMenu() {
     while (true) {
         console.log("\n=== Employee Scheduling System ===")
         console.log("1) List Employees")
         console.log("2) List Shifts")
         console.log("3) List Assignments")
-        console.log("4) Exit")
+        console.log("4) Assign Employee to Shift")
+        console.log("5) Exit")
 
         const choice = prompt("Choose option: ").trim()
 
@@ -18,6 +22,8 @@ async function mainMenu() {
         } else if (choice === "3") {
             await uiListAssignments()
         } else if (choice === "4") {
+            await uiAssignShift()
+        } else if (choice === "5") {
             console.log("Goodbye!")
             break
         } else {
@@ -26,6 +32,9 @@ async function mainMenu() {
     }
 }
 
+/**
+ * Prints all employees
+ */
 async function uiListEmployees() {
     const employees = await business.listEmployees()
 
@@ -36,11 +45,13 @@ async function uiListEmployees() {
 
     console.log("\nEmployees:")
     for (let i = 0; i < employees.length; i++) {
-        const employee = employees[i]
-        console.log("- " + employee.id + ": " + employee.name)
+        console.log("- " + employees[i].employeeId + ": " + employees[i].name)
     }
 }
 
+/**
+ * Prints all shifts
+ */
 async function uiListShifts() {
     const shifts = await business.listShifts()
 
@@ -51,11 +62,14 @@ async function uiListShifts() {
 
     console.log("\nShifts:")
     for (let i = 0; i < shifts.length; i++) {
-        const shift = shifts[i]
-        console.log("- " + shift.id + ": " + shift.day + " " + shift.start + "-" + shift.end)
+        const s = shifts[i]
+        console.log("- " + s.id + ": " + s.day + " " + s.start + "-" + s.end)
     }
 }
 
+/**
+ * Prints all assignments
+ */
 async function uiListAssignments() {
     const assignments = await business.listAssignments()
 
@@ -66,10 +80,22 @@ async function uiListAssignments() {
 
     console.log("\nAssignments:")
     for (let i = 0; i < assignments.length; i++) {
-        const assignment = assignments[i]
-        console.log("- Employee " + assignment.employeeId + " -> Shift " + assignment.shiftId)
+        const a = assignments[i]
+        console.log("- Employee " + a.employeeId + " -> Shift " + a.shiftId)
     }
 }
 
+/**
+ * Assigns an employee to a shift
+ */
+async function uiAssignShift() {
+    const employeeId = prompt("Enter employee ID: ").trim()
+    const shiftId = prompt("Enter shift ID: ").trim()
+
+    const result = await business.assignShift(employeeId, shiftId)
+    console.log(result.message)
+}
+
 mainMenu()
+
 
