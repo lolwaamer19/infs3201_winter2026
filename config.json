@@ -1,0 +1,4 @@
+{
+    "_comment": "Maximum number of hours an employee can work per day",
+    "maxDailyHours": 9
+}
