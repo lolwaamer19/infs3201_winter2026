@@ -3,6 +3,8 @@ const fs = require("fs/promises")
 const empFile = "./employees.json"
 const shiftFile = "./shifts.json"
 const assignFile = "./assignments.json"
+const configFile = "./config.json"
+
 
 async function readJson(file) {
     try {
@@ -202,6 +204,20 @@ async function deleteAssignment(employeeId, shiftId) {
     return true
 }
 
+async function getConfig() {
+    const cfg = await readJson(configFile)
+    return cfg
+}
+
+async function getMaxDailyHours() {
+    const cfg = await getConfig()
+    if (cfg === null || cfg.maxDailyHours === undefined) {
+        return 0
+    }
+    return cfg.maxDailyHours
+}
+
+
 module.exports = {
     getEmployees,
     findEmployee,
@@ -218,5 +234,7 @@ module.exports = {
     getAssignments,
     findAssignment,
     addAssignment,
-    deleteAssignment
+    deleteAssignment,
+    getConfig,
+    getMaxDailyHours
 }
