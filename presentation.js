@@ -63,7 +63,7 @@ async function uiListShifts() {
     console.log("\nShifts:")
     for (let i = 0; i < shifts.length; i++) {
         const s = shifts[i]
-        console.log("- " + s.id + ": " + s.day + " " + s.start + "-" + s.end)
+        console.log("- " + s.shiftId + ": " + s.date)
     }
 }
 

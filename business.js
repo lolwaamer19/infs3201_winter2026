@@ -93,5 +93,6 @@ module.exports = {
     listEmployees,
     listShifts,
     listAssignments,
-    assignShift
+    assignShift,
+    computeShiftDuration
 }

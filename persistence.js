@@ -56,13 +56,16 @@ async function getShifts() {
  */
 async function findShift(shiftId) {
     const shifts = await readJson(shiftFile)
+
     for (let i = 0; i < shifts.length; i++) {
-        if (shifts[i].id === shiftId) {
+        if (shifts[i].shiftId === shiftId) {
             return shifts[i]
         }
     }
+
     return null
 }
+
 
 /**
  * Returns all assignments
