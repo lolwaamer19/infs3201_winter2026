@@ -1,115 +1,136 @@
-const fs = require("fs/promises")
-
-const empFile = "./employees.json"
-const shiftFile = "./shifts.json"
-const configFile = "./config.json"
+const { MongoClient } = require("mongodb")
 
 /**
- * Reads a JSON file safely.
- * Returns an empty array if file read or parse fails.
- * @param {string} file Path to JSON file
- * @returns {Promise<Array|Object>} Parsed JSON content
+ * MongoDB connection string.
+ * Replace with your MongoDB Atlas connection string.
  */
-async function readJson(file) {
-    try {
-        const text = await fs.readFile(file, "utf-8")
-        return JSON.parse(text)
-    } catch (err) {
-        const debugLevel = getDebugLevel()
+const url = "mongodb+srv://60105155:<QATAr2022@@>@cluster0.kbxji.mongodb.net/?appName=Cluster0"
 
-        if (debugLevel >= 1) {
-            console.log("Error reading file: " + file)
-        }
+/**
+ * Database name required by assignment instructions.
+ */
+const dbName = "infs3201_winter2026"
 
-        if (debugLevel >= 2) {
-            console.log(err)
-        }
+let db = null
 
-        return []
+/**
+ * Establishes a connection to MongoDB (singleton pattern).
+ * Ensures only one connection is created.
+ * @returns {Promise<Object>} MongoDB database instance
+ */
+async function connect() {
+    if (!db) {
+        const client = new MongoClient(url)
+        await client.connect()
+        db = client.db(dbName)
     }
+    return db
 }
 
 /**
- * Returns DEBUG_LEVEL as a number.
- * @returns {number}
- */
-function getDebugLevel() {
-    const raw = process.env.DEBUG_LEVEL
-    const level = parseInt(raw, 10)
-
-    if (isNaN(level)) {
-        return 0
-    }
-
-    return level
-}
-
-/**
- * Writes data to a JSON file.
- * @param {string} file Path to JSON file
- * @param {Array|Object} data Data to write
- * @returns {Promise<void>}
- */
-async function writeJson(file, data) {
-    await fs.writeFile(file, JSON.stringify(data, null, 2))
-}
-
-/**
- * Returns all employees.
+ * Returns all employees from the employees collection.
  * @returns {Promise<Array>}
  */
 async function getEmployees() {
-    return await readJson(empFile)
+    const database = await connect()
+    return await database
+        .collection("employees")
+        .find({})
+        .toArray()
 }
 
 /**
- * Finds an employee by ID.
+ * Finds an employee by employeeId.
+ * Uses MongoDB findOne for efficiency (no full collection iteration).
  * @param {string} employeeId Employee ID
  * @returns {Promise<Object|null>}
  */
 async function findEmployee(employeeId) {
-    const employees = await readJson(empFile)
-    for (let i = 0; i < employees.length; i++) {
-        if (employees[i].employeeId === employeeId) {
-            return employees[i]
-        }
-    }
-    return null
+    const database = await connect()
+    return await database
+        .collection("employees")
+        .findOne({ employeeId: employeeId })
 }
 
 /**
- * Returns all shifts.
+ * Returns all shifts from the shifts collection.
  * @returns {Promise<Array>}
  */
 async function getShifts() {
-    return await readJson(shiftFile)
+    const database = await connect()
+    return await database
+        .collection("shifts")
+        .find({})
+        .toArray()
 }
 
 /**
- * Finds a shift by ID.
+ * Finds a shift by shiftId.
+ * Uses MongoDB findOne instead of manual looping.
  * @param {string} shiftId Shift ID
  * @returns {Promise<Object|null>}
  */
 async function findShift(shiftId) {
-    const shifts = await readJson(shiftFile)
-
-    for (let i = 0; i < shifts.length; i++) {
-        if (shifts[i].shiftId === shiftId) {
-            return shifts[i]
-        }
-    }
-
-    return null
+    const database = await connect()
+    return await database
+        .collection("shifts")
+        .findOne({ shiftId: shiftId })
 }
 
+/**
+ * Returns all assignments.
+ * (Keep collection even if not currently used,
+ * since assignment instructions say not to change schema.)
+ * @returns {Promise<Array>}
+ */
+async function getAssignments() {
+    const database = await connect()
+    return await database
+        .collection("assignments")
+        .find({})
+        .toArray()
+}
 
 /**
- * Returns the maxDailyHours value from config file.
- * @returns {Promise<number>}
+ * Finds an assignment by employeeId and shiftId.
+ * @param {string} employeeId Employee ID
+ * @param {string} shiftId Shift ID
+ * @returns {Promise<Object|null>}
  */
-async function getMaxDailyHours() {
-    const cfg = await readJson(configFile)
-    return cfg.maxDailyHours || 0
+async function findAssignment(employeeId, shiftId) {
+    const database = await connect()
+    return await database
+        .collection("assignments")
+        .findOne({
+            employeeId: employeeId,
+            shiftId: shiftId
+        })
+}
+
+/**
+ * Adds a new assignment document to the assignments collection.
+ * @param {string} employeeId Employee ID
+ * @param {string} shiftId Shift ID
+ * @returns {Promise<void>}
+ */
+async function addAssignment(employeeId, shiftId) {
+    const database = await connect()
+    await database
+        .collection("assignments")
+        .insertOne({
+            employeeId: employeeId,
+            shiftId: shiftId
+        })
+}
+
+/**
+ * Returns maxDailyHours configuration.
+ * Assignment instructions state configuration
+ * is NOT stored in the database.
+ * @returns {number}
+ */
+function getMaxDailyHours() {
+    return 8
 }
 
 module.exports = {
@@ -117,5 +138,8 @@ module.exports = {
     findEmployee,
     getShifts,
     findShift,
+    getAssignments,
+    findAssignment,
+    addAssignment,
     getMaxDailyHours
 }
