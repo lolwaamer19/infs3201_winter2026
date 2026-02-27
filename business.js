@@ -1,38 +1,39 @@
 const store = require("./persistence")
 
 /**
- * Returns all employees
+ * Returns all employees.
+ * @returns {Promise<Array>}
  */
 async function listEmployees() {
     return await store.getEmployees()
 }
 
 /**
- * Returns all shifts
+ * Returns all shifts.
+ * @returns {Promise<Array>}
  */
 async function listShifts() {
     return await store.getShifts()
 }
 
 /**
- * Returns all assignments
+ * Returns all assignments.
+ * @returns {Promise<Array>}
  */
 async function listAssignments() {
     return await store.getAssignments()
 }
 
-
-
-
 /**
  * Computes the duration of a shift in hours.
  *
  * LLM used: ChatGPT (OpenAI)
- * Prompt: "Write a JavaScript function computeShiftDuration(startTime, endTime)
- * that returns the number of hours as a real number between two times in HH:MM format."
+ * Prompt used:
+ * "Write a JavaScript function that calculates the number of hours
+ * between a start time and end time given in HH:MM format."
  *
- * @param {string} startTime - Shift start time (HH:MM)
- * @param {string} endTime - Shift end time (HH:MM)
+ * @param {string} startTime Shift start time (HH:MM)
+ * @param {string} endTime Shift end time (HH:MM)
  * @returns {number} Duration in hours
  */
 function computeShiftDuration(startTime, endTime) {
@@ -45,9 +46,14 @@ function computeShiftDuration(startTime, endTime) {
     return (endMinutes - startMinutes) / 60
 }
 
-
 /**
- * Assigns employee to shift with hour limit check
+ * Assigns an employee to a shift.
+ * Validates employee, shift, duplicate assignment,
+ * and enforces maxDailyHours limit.
+ *
+ * @param {string} employeeId Employee ID
+ * @param {string} shiftId Shift ID
+ * @returns {Promise<{success: boolean, message: string}>}
  */
 async function assignShift(employeeId, shiftId) {
     const employee = await store.findEmployee(employeeId)
@@ -72,20 +78,24 @@ async function assignShift(employeeId, shiftId) {
 
     for (let i = 0; i < assignments.length; i++) {
         const a = assignments[i]
+
         if (a.employeeId === employeeId) {
             const s = await store.findShift(a.shiftId)
-            if (s !== null && s.day === newShift.day) {
-                totalHours += computeShiftDuration(s.start, s.end)
 
+            if (s !== null && s.date === newShift.date) {
+                totalHours += computeShiftDuration(s.startTime, s.endTime)
             }
         }
     }
 
-    if (totalHours + computeShiftDuration(newShift.start, newShift.end) > maxDailyHours) {
+    const newShiftHours = computeShiftDuration(newShift.startTime, newShift.endTime)
+
+    if (totalHours + newShiftHours > maxDailyHours) {
         return { success: false, message: "Cannot assign shift. Daily hours limit exceeded." }
     }
 
     await store.addAssignment(employeeId, shiftId)
+
     return { success: true, message: "Shift assigned successfully." }
 }
 
