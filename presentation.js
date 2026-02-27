@@ -12,9 +12,8 @@ async function mainMenu() {
         console.log("\n=== Employee Scheduling System ===")
         console.log("1) List Employees")
         console.log("2) List Shifts")
-        console.log("3) List Assignments")
-        console.log("4) Assign Employee to Shift")
-        console.log("5) Exit")
+        
+        console.log("3) Exit")
 
         const choice = prompt("Choose option: ").trim()
 
@@ -22,11 +21,7 @@ async function mainMenu() {
             await uiListEmployees()
         } else if (choice === "2") {
             await uiListShifts()
-        } else if (choice === "3") {
-            await uiListAssignments()
-        } else if (choice === "4") {
-            await uiAssignShift()
-        } else if (choice === "5") {
+        }  else if (choice === "3") {
             console.log("Goodbye!")
             break
         } else {
@@ -89,19 +84,6 @@ async function uiListAssignments() {
         const a = assignments[i]
         console.log("- Employee " + a.employeeId + " -> Shift " + a.shiftId)
     }
-}
-
-/**
- * Prompts the user for employee and shift IDs,
- * then attempts to assign the shift.
- * @returns {Promise<void>}
- */
-async function uiAssignShift() {
-    const employeeId = prompt("Enter employee ID: ").trim()
-    const shiftId = prompt("Enter shift ID: ").trim()
-
-    const result = await business.assignShift(employeeId, shiftId)
-    console.log(result.message)
 }
 
 mainMenu()

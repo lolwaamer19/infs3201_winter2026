@@ -16,13 +16,7 @@ async function listShifts() {
     return await store.getShifts()
 }
 
-/**
- * Returns all assignments.
- * @returns {Promise<Array>}
- */
-async function listAssignments() {
-    return await store.getAssignments()
-}
+
 
 /**
  * Computes the duration of a shift in hours.
@@ -46,63 +40,10 @@ function computeShiftDuration(startTime, endTime) {
     return (endMinutes - startMinutes) / 60
 }
 
-/**
- * Assigns an employee to a shift.
- * Validates employee, shift, duplicate assignment,
- * and enforces maxDailyHours limit.
- *
- * @param {string} employeeId Employee ID
- * @param {string} shiftId Shift ID
- * @returns {Promise<{success: boolean, message: string}>}
- */
-async function assignShift(employeeId, shiftId) {
-    const employee = await store.findEmployee(employeeId)
-    if (employee === null) {
-        return { success: false, message: "Employee not found." }
-    }
 
-    const newShift = await store.findShift(shiftId)
-    if (newShift === null) {
-        return { success: false, message: "Shift not found." }
-    }
-
-    const existing = await store.findAssignment(employeeId, shiftId)
-    if (existing !== null) {
-        return { success: false, message: "Employee already assigned to this shift." }
-    }
-
-    const maxDailyHours = await store.getMaxDailyHours()
-    const assignments = await store.getAssignments()
-
-    let totalHours = 0
-
-    for (let i = 0; i < assignments.length; i++) {
-        const a = assignments[i]
-
-        if (a.employeeId === employeeId) {
-            const s = await store.findShift(a.shiftId)
-
-            if (s !== null && s.date === newShift.date) {
-                totalHours += computeShiftDuration(s.startTime, s.endTime)
-            }
-        }
-    }
-
-    const newShiftHours = computeShiftDuration(newShift.startTime, newShift.endTime)
-
-    if (totalHours + newShiftHours > maxDailyHours) {
-        return { success: false, message: "Cannot assign shift. Daily hours limit exceeded." }
-    }
-
-    await store.addAssignment(employeeId, shiftId)
-
-    return { success: true, message: "Shift assigned successfully." }
-}
 
 module.exports = {
     listEmployees,
     listShifts,
-    listAssignments,
-    assignShift,
     computeShiftDuration
 }

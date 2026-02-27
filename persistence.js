@@ -2,7 +2,6 @@ const fs = require("fs/promises")
 
 const empFile = "./employees.json"
 const shiftFile = "./shifts.json"
-const assignFile = "./assignments.json"
 const configFile = "./config.json"
 
 /**
@@ -103,42 +102,6 @@ async function findShift(shiftId) {
     return null
 }
 
-/**
- * Returns all assignments.
- * @returns {Promise<Array>}
- */
-async function getAssignments() {
-    return await readJson(assignFile)
-}
-
-/**
- * Finds an assignment by employee and shift.
- * @param {string} employeeId Employee ID
- * @param {string} shiftId Shift ID
- * @returns {Promise<Object|null>}
- */
-async function findAssignment(employeeId, shiftId) {
-    const assignments = await readJson(assignFile)
-    for (let i = 0; i < assignments.length; i++) {
-        const a = assignments[i]
-        if (a.employeeId === employeeId && a.shiftId === shiftId) {
-            return a
-        }
-    }
-    return null
-}
-
-/**
- * Adds a new assignment.
- * @param {string} employeeId Employee ID
- * @param {string} shiftId Shift ID
- * @returns {Promise<void>}
- */
-async function addAssignment(employeeId, shiftId) {
-    const assignments = await readJson(assignFile)
-    assignments.push({ employeeId, shiftId })
-    await writeJson(assignFile, assignments)
-}
 
 /**
  * Returns the maxDailyHours value from config file.
@@ -154,8 +117,5 @@ module.exports = {
     findEmployee,
     getShifts,
     findShift,
-    getAssignments,
-    findAssignment,
-    addAssignment,
     getMaxDailyHours
 }
