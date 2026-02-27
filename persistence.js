@@ -6,12 +6,10 @@ const assignFile = "./assignments.json"
 const configFile = "./config.json"
 
 /**
- * Reads JSON file safely
- */
-/**
- * Reads JSON file safely (returns [] on error)
- * @param {string} file
- * @returns {Promise<Array>}
+ * Reads a JSON file safely.
+ * Returns an empty array if file read or parse fails.
+ * @param {string} file Path to JSON file
+ * @returns {Promise<Array|Object>} Parsed JSON content
  */
 async function readJson(file) {
     try {
@@ -33,7 +31,7 @@ async function readJson(file) {
 }
 
 /**
- * Returns DEBUG_LEVEL as a number (0, 1, 2...)
+ * Returns DEBUG_LEVEL as a number.
  * @returns {number}
  */
 function getDebugLevel() {
@@ -48,21 +46,27 @@ function getDebugLevel() {
 }
 
 /**
- * Writes data to JSON file
+ * Writes data to a JSON file.
+ * @param {string} file Path to JSON file
+ * @param {Array|Object} data Data to write
+ * @returns {Promise<void>}
  */
 async function writeJson(file, data) {
     await fs.writeFile(file, JSON.stringify(data, null, 2))
 }
 
 /**
- * Returns all employees
+ * Returns all employees.
+ * @returns {Promise<Array>}
  */
 async function getEmployees() {
     return await readJson(empFile)
 }
 
 /**
- * Finds employee by ID
+ * Finds an employee by ID.
+ * @param {string} employeeId Employee ID
+ * @returns {Promise<Object|null>}
  */
 async function findEmployee(employeeId) {
     const employees = await readJson(empFile)
@@ -75,14 +79,17 @@ async function findEmployee(employeeId) {
 }
 
 /**
- * Returns all shifts
+ * Returns all shifts.
+ * @returns {Promise<Array>}
  */
 async function getShifts() {
     return await readJson(shiftFile)
 }
 
 /**
- * Finds shift by ID
+ * Finds a shift by ID.
+ * @param {string} shiftId Shift ID
+ * @returns {Promise<Object|null>}
  */
 async function findShift(shiftId) {
     const shifts = await readJson(shiftFile)
@@ -96,16 +103,19 @@ async function findShift(shiftId) {
     return null
 }
 
-
 /**
- * Returns all assignments
+ * Returns all assignments.
+ * @returns {Promise<Array>}
  */
 async function getAssignments() {
     return await readJson(assignFile)
 }
 
 /**
- * Finds assignment
+ * Finds an assignment by employee and shift.
+ * @param {string} employeeId Employee ID
+ * @param {string} shiftId Shift ID
+ * @returns {Promise<Object|null>}
  */
 async function findAssignment(employeeId, shiftId) {
     const assignments = await readJson(assignFile)
@@ -119,7 +129,10 @@ async function findAssignment(employeeId, shiftId) {
 }
 
 /**
- * Adds assignment
+ * Adds a new assignment.
+ * @param {string} employeeId Employee ID
+ * @param {string} shiftId Shift ID
+ * @returns {Promise<void>}
  */
 async function addAssignment(employeeId, shiftId) {
     const assignments = await readJson(assignFile)
@@ -128,7 +141,8 @@ async function addAssignment(employeeId, shiftId) {
 }
 
 /**
- * Reads maxDailyHours from config
+ * Returns the maxDailyHours value from config file.
+ * @returns {Promise<number>}
  */
 async function getMaxDailyHours() {
     const cfg = await readJson(configFile)
