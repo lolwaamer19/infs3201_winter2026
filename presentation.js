@@ -2,9 +2,10 @@ const prompt = require("prompt-sync")()
 const business = require("./business")
 require("dotenv").config()
 
-
 /**
- * Displays main menu and handles user choices
+ * Displays the main menu and handles user input.
+ * Repeats until the user chooses to exit.
+ * @returns {Promise<void>}
  */
 async function mainMenu() {
     while (true) {
@@ -35,7 +36,8 @@ async function mainMenu() {
 }
 
 /**
- * Prints all employees
+ * Retrieves and prints all employees.
+ * @returns {Promise<void>}
  */
 async function uiListEmployees() {
     const employees = await business.listEmployees()
@@ -52,7 +54,8 @@ async function uiListEmployees() {
 }
 
 /**
- * Prints all shifts
+ * Retrieves and prints all shifts.
+ * @returns {Promise<void>}
  */
 async function uiListShifts() {
     const shifts = await business.listShifts()
@@ -70,7 +73,8 @@ async function uiListShifts() {
 }
 
 /**
- * Prints all assignments
+ * Retrieves and prints all assignments.
+ * @returns {Promise<void>}
  */
 async function uiListAssignments() {
     const assignments = await business.listAssignments()
@@ -88,7 +92,9 @@ async function uiListAssignments() {
 }
 
 /**
- * Assigns an employee to a shift
+ * Prompts the user for employee and shift IDs,
+ * then attempts to assign the shift.
+ * @returns {Promise<void>}
  */
 async function uiAssignShift() {
     const employeeId = prompt("Enter employee ID: ").trim()
@@ -99,5 +105,4 @@ async function uiAssignShift() {
 }
 
 mainMenu()
-
 
