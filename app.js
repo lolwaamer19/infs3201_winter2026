@@ -32,6 +32,28 @@ function startServer() {
         res.render("home", { employees: employees })
     })
     /**
+   * GET /employee/:id
+   * Shows employee details and assigned shifts.
+   *
+   * @param {import("express").Request} req
+   * @param {import("express").Response} res
+   * @returns {Promise<void>}
+   */
+app.get("/employee/:id", async function (req, res) {
+    const employeeId = (req.params.id || "").trim()
+    const result = await business.getEmployeeDetails(employeeId)
+
+    if (!result.success) {
+        res.status(404).send(result.message)
+        return
+    }
+
+    res.render("employees", {
+        employee: result.employee,
+        shifts: result.shifts
+    })
+   })
+    /**
    * Employee details page.
    * @route GET /employee/:id
    */
