@@ -2,6 +2,7 @@ const express = require("express")
 const exphbs = require("express-handlebars")
 const business = require("./business")
 require("dotenv").config()
+app.use(express.urlencoded({ extended: false }))
 
 const app = express()
 const PORT = 8000
@@ -72,6 +73,47 @@ app.get("/employee/:id", async function (req, res) {
     app.listen(PORT, function () {
         console.log("Server running on http://127.0.0.1:" + PORT)
     })
+
+    /**
+ * GET /edit/:id
+ * shows edit form with prefilled data
+ */
+app.get("/edit/:id", async function (req, res) {
+    const employeeId = (req.params.id || "").trim()
+    const result = await business.getEmployeeDetails(employeeId)
+
+    if (!result.success) {
+        res.status(404).send(result.message)
+        return
+    }
+
+    res.render("edit", {
+        employee: result.employee
+    })
+})
+
+/**
+ * POST /edit/:id
+ * handles form submission with validation
+ * uses PRG pattern
+ */
+app.post("/edit/:id", async function (req, res) {
+    const employeeId = (req.params.id || "").trim()
+
+    const result = await business.editEmployee(
+        employeeId,
+        req.body.name,
+        req.body.phone
+    )
+
+    if (!result.success) {
+        res.send(result.message)
+        return
+    }
+
+    // PRG pattern
+    res.redirect("/employee/" + employeeId)
+})
 }
 
 startServer()
