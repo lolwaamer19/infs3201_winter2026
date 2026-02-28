@@ -14,6 +14,7 @@ async function listEmployees() {
  */
 async function listShifts() {
     return await store.getShifts()
+    return await store.getEmployees()
 }
 
 
@@ -40,10 +41,33 @@ function computeShiftDuration(startTime, endTime) {
     return (endMinutes - startMinutes) / 60
 }
 
+/**
+ * Returns employee + shifts (sorted by date/time) for details page.
+ * Also adds "startClass" for highlighting times before 12:00.
+ * @param {string} employeeId
+ * @returns {Promise<{success:boolean, message:string, employee?:Object, shifts?:Array}>}
+ */
+async function getEmployeeDetails(employeeId) {
+  const employee = await store.findEmployee(employeeId)
+  if (!employee) {
+    return { success: false, message: "Employee not found." }
+  }
+
+  const shifts = await store.getEmployeeShifts(employeeId)
+
+  // add highlight class (no client-side JS)
+  for (let i = 0; i < shifts.length; i++) {
+    const start = shifts[i].startTime || ""
+    shifts[i].startClass = start < "12:00" ? "beforeNoon" : ""
+  }
+
+  return { success: true, message: "OK", employee: employee, shifts: shifts }
+}
 
 
 module.exports = {
     listEmployees,
     listShifts,
-    computeShiftDuration
+    computeShiftDuration,
+    getEmployeeDetails
 }
