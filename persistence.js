@@ -1,136 +1,150 @@
 const { MongoClient } = require("mongodb")
+require("dotenv").config()
 
-/**
- * MongoDB connection string.
- * Replace with your MongoDB Atlas connection string.
- */
-const url = "mongodb+srv://60105155:<QATAr2022@@>@cluster0.kbxji.mongodb.net/?appName=Cluster0"
-
-/**
- * Database name required by assignment instructions.
- */
 const dbName = "infs3201_winter2026"
 
+let client = null
 let db = null
 
 /**
- * Establishes a connection to MongoDB (singleton pattern).
- * Ensures only one connection is created.
- * @returns {Promise<Object>} MongoDB database instance
+ * connects to mongodb once and reuses the connection
+ * @returns {Promise<import("mongodb").Db>}
  */
 async function connect() {
-    if (!db) {
-        const client = new MongoClient(url)
-        await client.connect()
-        db = client.db(dbName)
+    if (db) {
+        return db
     }
+
+    const mongoUrl = process.env.MONGO_URL
+
+    if (!mongoUrl) {
+        throw new Error("MONGO_URL is missing in .env")
+    }
+
+    client = new MongoClient(mongoUrl)
+    await client.connect()
+    db = client.db(dbName)
+
     return db
 }
 
 /**
- * Returns all employees from the employees collection.
+ * returns all employees
  * @returns {Promise<Array>}
  */
 async function getEmployees() {
     const database = await connect()
-    return await database
-        .collection("employees")
-        .find({})
-        .toArray()
+    return await database.collection("employees").find({}).toArray()
 }
 
 /**
- * Finds an employee by employeeId.
- * Uses MongoDB findOne for efficiency (no full collection iteration).
- * @param {string} employeeId Employee ID
+ * finds one employee by employeeId
+ * @param {string} employeeId
  * @returns {Promise<Object|null>}
  */
 async function findEmployee(employeeId) {
     const database = await connect()
-    return await database
-        .collection("employees")
-        .findOne({ employeeId: employeeId })
+    return await database.collection("employees").findOne({ employeeId: employeeId })
 }
 
 /**
- * Returns all shifts from the shifts collection.
+ * returns all shifts
  * @returns {Promise<Array>}
  */
 async function getShifts() {
     const database = await connect()
-    return await database
-        .collection("shifts")
-        .find({})
-        .toArray()
+    return await database.collection("shifts").find({}).toArray()
 }
 
 /**
- * Finds a shift by shiftId.
- * Uses MongoDB findOne instead of manual looping.
- * @param {string} shiftId Shift ID
+ * finds one shift by shiftId
+ * @param {string} shiftId
  * @returns {Promise<Object|null>}
  */
 async function findShift(shiftId) {
     const database = await connect()
-    return await database
-        .collection("shifts")
-        .findOne({ shiftId: shiftId })
+    return await database.collection("shifts").findOne({ shiftId: shiftId })
 }
 
 /**
- * Returns all assignments.
- * (Keep collection even if not currently used,
- * since assignment instructions say not to change schema.)
+ * returns all assignments
  * @returns {Promise<Array>}
  */
 async function getAssignments() {
     const database = await connect()
-    return await database
-        .collection("assignments")
-        .find({})
-        .toArray()
+    return await database.collection("assignments").find({}).toArray()
 }
 
 /**
- * Finds an assignment by employeeId and shiftId.
- * @param {string} employeeId Employee ID
- * @param {string} shiftId Shift ID
+ * finds one assignment by employeeId and shiftId
+ * @param {string} employeeId
+ * @param {string} shiftId
  * @returns {Promise<Object|null>}
  */
 async function findAssignment(employeeId, shiftId) {
     const database = await connect()
-    return await database
-        .collection("assignments")
-        .findOne({
-            employeeId: employeeId,
-            shiftId: shiftId
-        })
+    return await database.collection("assignments").findOne({
+        employeeId: employeeId,
+        shiftId: shiftId
+    })
 }
 
 /**
- * Adds a new assignment document to the assignments collection.
- * @param {string} employeeId Employee ID
- * @param {string} shiftId Shift ID
+ * adds an assignment document
+ * @param {string} employeeId
+ * @param {string} shiftId
  * @returns {Promise<void>}
  */
 async function addAssignment(employeeId, shiftId) {
     const database = await connect()
-    await database
-        .collection("assignments")
-        .insertOne({
-            employeeId: employeeId,
-            shiftId: shiftId
-        })
+    await database.collection("assignments").insertOne({
+        employeeId: employeeId,
+        shiftId: shiftId
+    })
 }
 
 /**
- * Returns maxDailyHours configuration.
- * Assignment instructions state configuration
- * is NOT stored in the database.
- * @returns {number}
+ * returns shifts for a specific employee
+ * joins assignments with shifts collection
+ * sorted by date then startTime (ascending)
+ * @param {string} employeeId
+ * @returns {Promise<Array>}
  */
-function getMaxDailyHours() {
-    return 8
+async function getEmployeeShifts(employeeId) {
+    const database = await connect()
+
+    const assignments = await database
+        .collection("assignments")
+        .find({ employeeId: employeeId })
+        .toArray()
+
+    const shifts = []
+
+    for (let i = 0; i < assignments.length; i++) {
+        const shift = await database
+            .collection("shifts")
+            .findOne({ shiftId: assignments[i].shiftId })
+
+        if (shift) {
+            shifts.push(shift)
+        }
+    }
+
+    // simple manual sort (no array methods)
+    for (let i = 0; i < shifts.length; i++) {
+        for (let j = 0; j < shifts.length - 1; j++) {
+            const aKey = shifts[j].date + shifts[j].startTime
+            const bKey = shifts[j + 1].date + shifts[j + 1].startTime
+
+            if (aKey > bKey) {
+                const temp = shifts[j]
+                shifts[j] = shifts[j + 1]
+                shifts[j + 1] = temp
+            }
+        }
+    }
+
+    return shifts
 }
 
 module.exports = {
@@ -141,5 +155,5 @@ module.exports = {
     getAssignments,
     findAssignment,
     addAssignment,
-    getMaxDailyHours
+    getEmployeeShifts
 }
