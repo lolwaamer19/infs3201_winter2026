@@ -129,6 +129,27 @@ async function getEmployeeShifts(employeeId) {
             shifts.push(shift)
         }
     }
+    /**
+ * updates employee name and phone
+ * uses updateOne as required by assignment
+ * @param {string} employeeId
+ * @param {string} name
+ * @param {string} phone
+ * @returns {Promise<void>}
+ */
+async function updateEmployee(employeeId, name, phone) {
+    const database = await connect()
+
+    await database.collection("employees").updateOne(
+        { employeeId: employeeId },
+        {
+            $set: {
+                name: name,
+                phone: phone
+            }
+        }
+    )
+}
 
     // simple manual sort (no array methods)
     for (let i = 0; i < shifts.length; i++) {
@@ -155,5 +176,6 @@ module.exports = {
     getAssignments,
     findAssignment,
     addAssignment,
-    getEmployeeShifts
+    getEmployeeShifts,
+    updateEmployee
 }
