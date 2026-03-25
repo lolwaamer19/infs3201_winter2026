@@ -116,6 +116,61 @@ async function updateEmployee(id, name, phone) {
         }
     )
 }
+/**
+ * finds a user by username
+ * @param {string} username
+ * @returns {Promise<Object|null>}
+ */
+async function findUser(username) {
+    const database = await connect()
+    return await database.collection("users").findOne({ username: username })
+}
+
+/**
+ * saves a session to the database
+ * @param {string} key - the session key
+ * @param {Date} expiry - the expiry date
+ * @param {Object} data - the session data
+ * @returns {Promise<void>}
+ */
+async function saveSession(key, expiry, data) {
+    const database = await connect()
+    await database.collection("sessions").insertOne({ key: key, expiry: expiry, data: data })
+}
+
+/**
+ * gets a session by key
+ * @param {string} key
+ * @returns {Promise<Object|null>}
+ */
+async function getSession(key) {
+    const database = await connect()
+    return await database.collection("sessions").findOne({ key: key })
+}
+
+/**
+ * deletes a session by key
+ * @param {string} key
+ * @returns {Promise<void>}
+ */
+async function deleteSession(key) {
+    const database = await connect()
+    await database.collection("sessions").deleteOne({ key: key })
+}
+
+/**
+ * updates the expiry of a session by key
+ * @param {string} key
+ * @param {Date} expiry
+ * @returns {Promise<void>}
+ */
+async function updateSessionExpiry(key, expiry) {
+    const database = await connect()
+    await database.collection("sessions").updateOne(
+        { key: key },
+        { $set: { expiry: expiry } }
+    )
+}
 
 module.exports = {
     getEmployees,
@@ -123,5 +178,10 @@ module.exports = {
     getShifts,
     findShift,
     getEmployeeShifts,
-    updateEmployee
+    updateEmployee,
+    findUser,
+    saveSession,
+    getSession,
+    deleteSession,
+    updateSessionExpiry
 }

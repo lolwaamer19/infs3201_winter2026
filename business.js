@@ -99,11 +99,86 @@ async function editEmployee(employeeId, name, phone) {
   return { success: true, message: "Updated." }
 }
 
+const crypto = require("crypto")
+const { v4: uuidv4 } = require("uuid")
+
+/**
+ * checks login credentials and returns username if valid
+ * @param {string} username
+ * @param {string} password
+ * @returns {Promise<string|undefined>}
+ */
+async function checkLogin(username, password) {
+    const hashed = crypto.createHash("sha256").update(password).digest("hex")
+    const user = await store.findUser(username)
+
+    if (!user) {
+        return undefined
+    }
+
+    if (user.password !== hashed) {
+        return undefined
+    }
+
+    return user.username
+}
+
+/**
+ * creates a new session and returns the session key
+ * @param {string} username
+ * @returns {Promise<string>}
+ */
+async function startSession(username) {
+    const key = uuidv4()
+    const expiry = new Date()
+    expiry.setMinutes(expiry.getMinutes() + 5)
+    await store.saveSession(key, expiry, { username: username })
+    return key
+}
+
+/**
+ * gets session data if session exists and is not expired
+ * @param {string} key
+ * @returns {Promise<Object|null>}
+ */
+async function getSessionData(key) {
+    const session = await store.getSession(key)
+
+    if (!session) {
+        return null
+    }
+
+    // check if session is expired
+    if (new Date() > new Date(session.expiry)) {
+        await store.deleteSession(key)
+        return null
+    }
+
+    // extend session by 5 more minutes
+    const newExpiry = new Date()
+    newExpiry.setMinutes(newExpiry.getMinutes() + 5)
+    await store.updateSessionExpiry(key, newExpiry)
+
+    return session.data
+}
+
+/**
+ * deletes a session by key
+ * @param {string} key
+ * @returns {Promise<void>}
+ */
+async function deleteSession(key) {
+    await store.deleteSession(key)
+}
 
 module.exports = {
     listEmployees,
     listShifts,
     computeShiftDuration,
     getEmployeeDetails,
-    editEmployee
+    editEmployee,
+    checkLogin,
+    startSession,
+    getSessionData,
+    deleteSession
 }
