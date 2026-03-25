@@ -16,7 +16,6 @@ async function connect() {
     }
 
     const mongoUrl = process.env.MONGO_URL
-
     if (!mongoUrl) {
         throw new Error("MONGO_URL is missing in .env")
     }
@@ -129,7 +128,25 @@ async function getEmployeeShifts(employeeId) {
             shifts.push(shift)
         }
     }
-    /**
+
+    // manual sort (no .sort())
+    for (let i = 0; i < shifts.length; i++) {
+        for (let j = 0; j < shifts.length - 1; j++) {
+            const aKey = shifts[j].date + shifts[j].startTime
+            const bKey = shifts[j + 1].date + shifts[j + 1].startTime
+
+            if (aKey > bKey) {
+                const temp = shifts[j]
+                shifts[j] = shifts[j + 1]
+                shifts[j + 1] = temp
+            }
+        }
+    }
+
+    return shifts
+}
+
+/**
  * updates employee name and phone
  * uses updateOne as required by assignment
  * @param {string} employeeId
@@ -149,23 +166,6 @@ async function updateEmployee(employeeId, name, phone) {
             }
         }
     )
-}
-
-    // simple manual sort (no array methods)
-    for (let i = 0; i < shifts.length; i++) {
-        for (let j = 0; j < shifts.length - 1; j++) {
-            const aKey = shifts[j].date + shifts[j].startTime
-            const bKey = shifts[j + 1].date + shifts[j + 1].startTime
-
-            if (aKey > bKey) {
-                const temp = shifts[j]
-                shifts[j] = shifts[j + 1]
-                shifts[j + 1] = temp
-            }
-        }
-    }
-
-    return shifts
 }
 
 module.exports = {

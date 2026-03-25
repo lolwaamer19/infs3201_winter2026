@@ -64,10 +64,46 @@ async function getEmployeeDetails(employeeId) {
   return { success: true, message: "OK", employee: employee, shifts: shifts }
 }
 
+/**
+ * edits employee after validating inputs (server-side)
+ * @param {string} employeeId
+ * @param {string} name
+ * @param {string} phone
+ * @returns {Promise<{success:boolean, message:string}>}
+ */
+async function editEmployee(employeeId, name, phone) {
+  employeeId = (employeeId || "").trim()
+  name = (name || "").trim()
+  phone = (phone || "").trim()
+
+  if (!employeeId) {
+    return { success: false, message: "Employee ID is required." }
+  }
+
+  if (!name) {
+    return { success: false, message: "Name must be non-empty." }
+  }
+
+  // must be 4 digits, dash, 4 digits
+  const phoneOk = /^\d{4}-\d{4}$/.test(phone)
+  if (!phoneOk) {
+    return { success: false, message: "Phone number must be 4 digits, a dash, then 4 digits." }
+  }
+
+  const employee = await store.findEmployee(employeeId)
+  if (!employee) {
+    return { success: false, message: "Employee not found." }
+  }
+
+  await store.updateEmployee(employeeId, name, phone)
+  return { success: true, message: "Updated." }
+}
+
 
 module.exports = {
     listEmployees,
     listShifts,
     computeShiftDuration,
-    getEmployeeDetails
+    getEmployeeDetails,
+    editEmployee
 }
