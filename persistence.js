@@ -1,4 +1,4 @@
-const { MongoClient } = require("mongodb")
+const { MongoClient, ObjectId } = require("mongodb")
 require("dotenv").config()
 
 const dbName = "infs3201_winter2026"
@@ -37,13 +37,13 @@ async function getEmployees() {
 }
 
 /**
- * finds one employee by employeeId
- * @param {string} employeeId
+ * finds one employee by their ObjectId
+ * @param {string} id - the string version of the ObjectId
  * @returns {Promise<Object|null>}
  */
-async function findEmployee(employeeId) {
+async function findEmployee(id) {
     const database = await connect()
-    return await database.collection("employees").findOne({ employeeId: employeeId })
+    return await database.collection("employees").findOne({ _id: new ObjectId(id) })
 }
 
 /**
@@ -56,78 +56,28 @@ async function getShifts() {
 }
 
 /**
- * finds one shift by shiftId
- * @param {string} shiftId
+ * finds one shift by its ObjectId
+ * @param {string} id - the string version of the ObjectId
  * @returns {Promise<Object|null>}
  */
-async function findShift(shiftId) {
+async function findShift(id) {
     const database = await connect()
-    return await database.collection("shifts").findOne({ shiftId: shiftId })
+    return await database.collection("shifts").findOne({ _id: new ObjectId(id) })
 }
 
 /**
- * returns all assignments
- * @returns {Promise<Array>}
- */
-async function getAssignments() {
-    const database = await connect()
-    return await database.collection("assignments").find({}).toArray()
-}
-
-/**
- * finds one assignment by employeeId and shiftId
- * @param {string} employeeId
- * @param {string} shiftId
- * @returns {Promise<Object|null>}
- */
-async function findAssignment(employeeId, shiftId) {
-    const database = await connect()
-    return await database.collection("assignments").findOne({
-        employeeId: employeeId,
-        shiftId: shiftId
-    })
-}
-
-/**
- * adds an assignment document
- * @param {string} employeeId
- * @param {string} shiftId
- * @returns {Promise<void>}
- */
-async function addAssignment(employeeId, shiftId) {
-    const database = await connect()
-    await database.collection("assignments").insertOne({
-        employeeId: employeeId,
-        shiftId: shiftId
-    })
-}
-
-/**
- * returns shifts for a specific employee
- * joins assignments with shifts collection
+ * returns all shifts that contain the employee's ObjectId in their employees array
  * sorted by date then startTime (ascending)
- * @param {string} employeeId
+ * @param {string} id - the string version of the employee's ObjectId
  * @returns {Promise<Array>}
  */
-async function getEmployeeShifts(employeeId) {
+async function getEmployeeShifts(id) {
     const database = await connect()
 
-    const assignments = await database
-        .collection("assignments")
-        .find({ employeeId: employeeId })
+    const shifts = await database
+        .collection("shifts")
+        .find({ employees: new ObjectId(id) })
         .toArray()
-
-    const shifts = []
-
-    for (let i = 0; i < assignments.length; i++) {
-        const shift = await database
-            .collection("shifts")
-            .findOne({ shiftId: assignments[i].shiftId })
-
-        if (shift) {
-            shifts.push(shift)
-        }
-    }
 
     // manual sort (no .sort())
     for (let i = 0; i < shifts.length; i++) {
@@ -147,18 +97,17 @@ async function getEmployeeShifts(employeeId) {
 }
 
 /**
- * updates employee name and phone
- * uses updateOne as required by assignment
- * @param {string} employeeId
+ * updates employee name and phone by ObjectId
+ * @param {string} id - the string version of the ObjectId
  * @param {string} name
  * @param {string} phone
  * @returns {Promise<void>}
  */
-async function updateEmployee(employeeId, name, phone) {
+async function updateEmployee(id, name, phone) {
     const database = await connect()
 
     await database.collection("employees").updateOne(
-        { employeeId: employeeId },
+        { _id: new ObjectId(id) },
         {
             $set: {
                 name: name,
@@ -173,9 +122,6 @@ module.exports = {
     findEmployee,
     getShifts,
     findShift,
-    getAssignments,
-    findAssignment,
-    addAssignment,
     getEmployeeShifts,
     updateEmployee
 }
