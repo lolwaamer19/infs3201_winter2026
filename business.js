@@ -171,6 +171,18 @@ async function deleteSession(key) {
     await store.deleteSession(key)
 }
 
+/**
+ * logs a security access entry
+ * @param {string} username
+ * @param {string} url
+ * @param {string} method
+ * @returns {Promise<void>}
+ */
+async function logAccess(username, url, method) {
+    await store.logAccess(username, url, method)
+}
+
+
 module.exports = {
     listEmployees,
     listShifts,
@@ -180,5 +192,6 @@ module.exports = {
     checkLogin,
     startSession,
     getSessionData,
-    deleteSession
+    deleteSession,
+    logAccess
 }

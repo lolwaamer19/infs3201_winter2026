@@ -171,6 +171,22 @@ async function updateSessionExpiry(key, expiry) {
         { $set: { expiry: expiry } }
     )
 }
+/**
+ * saves a security log entry to the database
+ * @param {string} username - the logged in user or "unknown"
+ * @param {string} url - the URL accessed
+ * @param {string} method - GET or POST
+ * @returns {Promise<void>}
+ */
+async function logAccess(username, url, method) {
+    const database = await connect()
+    await database.collection("security_log").insertOne({
+        timestamp: new Date(),
+        username: username,
+        url: url,
+        method: method
+    })
+}
 
 module.exports = {
     getEmployees,
@@ -183,5 +199,6 @@ module.exports = {
     saveSession,
     getSession,
     deleteSession,
-    updateSessionExpiry
+    updateSessionExpiry,
+    logAccess
 }

@@ -46,6 +46,29 @@ app.use(checkAuth)
  * Configures handlebars, defines routes, and starts the Express server.
  * @returns {void}
  */
+/**
+ * Middleware to log every request to the security_log collection.
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {Function} next
+ * @returns {Promise<void>}
+ */
+async function logRequest(req, res, next) {
+    const key = req.cookies.sessionkey
+    let username = "unknown"
+
+    if (key) {
+        const session = await business.getSessionData(key)
+        if (session) {
+            username = session.username
+        }
+    }
+
+    await business.logAccess(username, req.path, req.method)
+    next()
+}
+
+app.use(logRequest)
 function startServer() {
   // handlebars setup
   app.engine("handlebars", exphbs.engine({ defaultLayout: false }))
