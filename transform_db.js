@@ -75,7 +75,29 @@ async function embedEmployeesInShifts() {
 
     console.log("Step 2 done: embedded employee ObjectIds into shifts")
 }
+/**
+ * Step 3: Removes employeeId from employees, shiftId from shifts,
+ * and drops the assignments collection entirely.
+ * @returns {Promise<void>}
+ */
+async function removeUnnecessaryItems() {
+    // remove employeeId field from all employees
+    await db.collection("employees").updateMany(
+        {},
+        { $unset: { employeeId: "" } }
+    )
 
+    // remove shiftId field from all shifts
+    await db.collection("shifts").updateMany(
+        {},
+        { $unset: { shiftId: "" } }
+    )
+
+    // drop the assignments collection completely
+    await db.collection("assignments").drop()
+
+    console.log("Step 3 done: removed unnecessary fields and dropped assignments collection")
+}
 async function main() {
     console.log("Script started!")
     try {
@@ -83,6 +105,7 @@ async function main() {
         console.log("Connected to database!")
         await addEmptyEmployeesArray()
         await embedEmployeesInShifts()
+        await removeUnnecessaryItems()
         await disconnect()
         console.log("Migration complete!")
     } catch (err) {
@@ -90,5 +113,6 @@ async function main() {
         console.log(err)
     }
 }
+
 
 main()
