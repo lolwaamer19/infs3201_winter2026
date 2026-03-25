@@ -76,3 +76,19 @@ async function embedEmployeesInShifts() {
     console.log("Step 2 done: embedded employee ObjectIds into shifts")
 }
 
+async function main() {
+    console.log("Script started!")
+    try {
+        await connect()
+        console.log("Connected to database!")
+        await addEmptyEmployeesArray()
+        await embedEmployeesInShifts()
+        await disconnect()
+        console.log("Migration complete!")
+    } catch (err) {
+        console.log("Error: " + err.message)
+        console.log(err)
+    }
+}
+
+main()
