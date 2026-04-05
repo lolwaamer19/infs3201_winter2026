@@ -257,6 +257,51 @@ async function getUserByUsername(username) {
     return await store.findUser(username)
 }
 
+const path = require("path")
+const fs = require("fs")
+
+/**
+ * uploads a document for an employee
+ * @param {string} employeeId
+ * @param {Object} file - the uploaded file object from multer
+ * @returns {Promise<{success:boolean, message:string}>}
+ */
+async function uploadDocument(employeeId, file) {
+    if (!file) {
+        return { success: false, message: "No file uploaded." }
+    }
+
+    // check file type
+    if (file.mimetype !== "application/pdf") {
+        fs.unlinkSync(file.path)
+        return { success: false, message: "Only PDF files are allowed." }
+    }
+
+    // check file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+        fs.unlinkSync(file.path)
+        return { success: false, message: "File must be less than 2MB." }
+    }
+
+    // check document count (max 5)
+    const count = await store.countDocuments(employeeId)
+    if (count >= 5) {
+        fs.unlinkSync(file.path)
+        return { success: false, message: "Maximum of 5 documents allowed per employee." }
+    }
+
+    await store.saveDocument(employeeId, file.filename, file.originalname)
+    return { success: true, message: "Document uploaded successfully." }
+}
+
+/**
+ * returns list of documents for an employee
+ * @param {string} employeeId
+ * @returns {Promise<Array>}
+ */
+async function getEmployeeDocuments(employeeId) {
+    return await store.getEmployeeDocuments(employeeId)
+}
 
 module.exports = {
     listEmployees,
@@ -272,5 +317,7 @@ module.exports = {
     checkLogin,
     generate2FACode,
     verify2FACode,
-    getUserByUsername
+    getUserByUsername,
+    uploadDocument,
+    getEmployeeDocuments
 }
