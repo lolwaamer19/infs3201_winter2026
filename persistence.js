@@ -187,6 +187,77 @@ async function logAccess(username, url, method) {
         method: method
     })
 }
+/**
+ * saves a 2FA code for a user with expiry
+ * @param {string} username
+ * @param {string} code
+ * @param {Date} expiry
+ * @returns {Promise<void>}
+ */
+async function save2FACode(username, code, expiry) {
+    const database = await connect()
+    await database.collection("twofa").deleteMany({ username: username })
+    await database.collection("twofa").insertOne({ username: username, code: code, expiry: expiry })
+}
+
+/**
+ * gets a 2FA code for a user
+ * @param {string} username
+ * @returns {Promise<Object|null>}
+ */
+async function get2FACode(username) {
+    const database = await connect()
+    return await database.collection("twofa").findOne({ username: username })
+}
+
+/**
+ * deletes a 2FA code for a user
+ * @param {string} username
+ * @returns {Promise<void>}
+ */
+async function delete2FACode(username) {
+    const database = await connect()
+    await database.collection("twofa").deleteOne({ username: username })
+}
+
+/**
+ * increments failed login attempts for a user
+ * @param {string} username
+ * @returns {Promise<void>}
+ */
+async function incrementFailedAttempts(username) {
+    const database = await connect()
+    await database.collection("users").updateOne(
+        { username: username },
+        { $inc: { failedAttempts: 1 } }
+    )
+}
+
+/**
+ * resets failed login attempts for a user
+ * @param {string} username
+ * @returns {Promise<void>}
+ */
+async function resetFailedAttempts(username) {
+    const database = await connect()
+    await database.collection("users").updateOne(
+        { username: username },
+        { $set: { failedAttempts: 0 } }
+    )
+}
+
+/**
+ * locks a user account
+ * @param {string} username
+ * @returns {Promise<void>}
+ */
+async function lockAccount(username) {
+    const database = await connect()
+    await database.collection("users").updateOne(
+        { username: username },
+        { $set: { locked: true } }
+    )
+}
 
 module.exports = {
     getEmployees,
@@ -200,5 +271,11 @@ module.exports = {
     getSession,
     deleteSession,
     updateSessionExpiry,
-    logAccess
+    logAccess,
+    save2FACode,
+    get2FACode,
+    delete2FACode,
+    incrementFailedAttempts,
+    resetFailedAttempts,
+    lockAccount
 }

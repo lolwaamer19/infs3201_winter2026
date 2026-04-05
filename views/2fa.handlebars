@@ -1,0 +1,15 @@
+<h1>Two-Factor Authentication</h1>
+
+<p>A 6-digit code has been sent to your email. Please enter it below.</p>
+
+{{#if message}}
+  <p style="color:red;">{{message}}</p>
+{{/if}}
+
+<form method="POST" action="/twofa">
+  <input type="hidden" name="username" value="{{username}}">
+  <p>
+    Code: <input type="text" name="code" maxlength="6">
+  </p>
+  <button type="submit">Verify</button>
+</form>

@@ -108,19 +108,86 @@ const { v4: uuidv4 } = require("uuid")
  * @param {string} password
  * @returns {Promise<string|undefined>}
  */
+const emailSystem = require("./emailSystem")
+
+/**
+ * checks login credentials, handles account locking and failed attempts
+ * @param {string} username
+ * @param {string} password
+ * @returns {Promise<{success:boolean, message:string}>}
+ */
 async function checkLogin(username, password) {
     const hashed = crypto.createHash("sha256").update(password).digest("hex")
     const user = await store.findUser(username)
 
     if (!user) {
-        return undefined
+        return { success: false, message: "Invalid username or password" }
+    }
+
+    if (user.locked) {
+        return { success: false, message: "Account is locked. Please contact support." }
     }
 
     if (user.password !== hashed) {
-        return undefined
+        await store.incrementFailedAttempts(username)
+
+        const updatedUser = await store.findUser(username)
+        const attempts = updatedUser.failedAttempts
+
+        if (attempts >= 10) {
+            await store.lockAccount(username)
+            await emailSystem.sendAccountLockedEmail(user.email)
+            return { success: false, message: "Account locked due to too many failed attempts." }
+        }
+
+        if (attempts >= 3) {
+            await emailSystem.sendSuspiciousActivityEmail(user.email)
+        }
+
+        return { success: false, message: "Invalid username or password" }
     }
 
-    return user.username
+    await store.resetFailedAttempts(username)
+    return { success: true, message: "OK" }
+}
+
+/**
+ * generates and saves a 6-digit 2FA code for a user
+ * @param {string} username
+ * @returns {Promise<string>}
+ */
+async function generate2FACode(username) {
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiry = new Date()
+    expiry.setMinutes(expiry.getMinutes() + 3)
+    await store.save2FACode(username, code, expiry)
+    return code
+}
+
+/**
+ * verifies a 2FA code for a user
+ * @param {string} username
+ * @param {string} code
+ * @returns {Promise<boolean>}
+ */
+async function verify2FACode(username, code) {
+    const record = await store.get2FACode(username)
+
+    if (!record) {
+        return false
+    }
+
+    if (new Date() > new Date(record.expiry)) {
+        await store.delete2FACode(username)
+        return false
+    }
+
+    if (record.code !== code) {
+        return false
+    }
+
+    await store.delete2FACode(username)
+    return true
 }
 
 /**
@@ -193,5 +260,8 @@ module.exports = {
     startSession,
     getSessionData,
     deleteSession,
-    logAccess
+    logAccess,
+    checkLogin,
+    generate2FACode,
+    verify2FACode
 }
