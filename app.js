@@ -11,6 +11,20 @@ const PORT = 8000
 app.use(express.urlencoded({ extended: false }))
 
 const cookieParser = require("cookie-parser")
+const multer = require("multer")
+const path = require("path")
+const fs = require("fs")
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, "uploads/")
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + "-" + file.originalname)
+    }
+})
+
+const upload = multer({ storage: storage })
 app.use(cookieParser())
 /**
  * Middleware to check if user is logged in.
@@ -74,6 +88,70 @@ function startServer() {
   app.engine("handlebars", exphbs.engine({ defaultLayout: false }))
   app.set("view engine", "handlebars")
   app.set("views", "./views")
+  /**
+ * Shows document upload page for an employee.
+ * @route GET /employee/:id/documents
+ */
+app.get("/employee/:id/documents", async function (req, res) {
+    const employeeId = (req.params.id || "").trim()
+    const result = await business.getEmployeeDetails(employeeId)
+
+    if (!result.success) {
+        res.status(404).send(result.message)
+        return
+    }
+
+    const documents = await business.getEmployeeDocuments(employeeId)
+    res.render("documents", {
+        employee: result.employee,
+        documents: documents,
+        message: req.query.message
+    })
+})
+
+/**
+ * Handles document upload for an employee.
+ * @route POST /employee/:id/documents
+ */
+app.post("/employee/:id/documents", upload.single("document"), async function (req, res) {
+    const employeeId = (req.params.id || "").trim()
+    const result = await business.uploadDocument(employeeId, req.file)
+
+    if (!result.success) {
+        res.redirect("/employee/" + employeeId + "/documents?message=" + result.message)
+        return
+    }
+
+    res.redirect("/employee/" + employeeId + "/documents?message=Document uploaded successfully")
+})
+
+/**
+ * Serves a document file securely (no public static route).
+ * @route GET /uploads/:filename
+ */
+app.get("/uploads/:filename", async function (req, res) {
+    const key = req.cookies.sessionkey
+    if (!key) {
+        res.redirect("/login?message=Please log in first")
+        return
+    }
+
+    const session = await business.getSessionData(key)
+    if (!session) {
+        res.redirect("/login?message=Please log in first")
+        return
+    }
+
+    const filename = req.params.filename
+    const filepath = path.join(__dirname, "uploads", filename)
+
+    if (!fs.existsSync(filepath)) {
+        res.status(404).send("File not found")
+        return
+    }
+
+    res.sendFile(filepath)
+})
   /**
  * Shows the login page.
  * @route GET /login
