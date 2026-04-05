@@ -2,7 +2,7 @@ const express = require("express")
 const exphbs = require("express-handlebars")
 const business = require("./business")
 require("dotenv").config()
-
+const emailSystem = require("./emailSystem")
 const app = express()
 const PORT = 8000
 
@@ -83,20 +83,52 @@ app.get("/login", function (req, res) {
 })
 
 /**
- * Handles login form submit.
+ * Handles login form submit, validates credentials and sends 2FA code.
  * @route POST /login
  */
 app.post("/login", async function (req, res) {
     const username = req.body.username
     const password = req.body.password
 
-    const user = await business.checkLogin(username, password)
+    const result = await business.checkLogin(username, password)
 
-    if (!user) {
-        res.redirect("/login?message=Invalid username or password")
+    if (!result.success) {
+        res.redirect("/login?message=" + result.message)
         return
     }
 
+    // generate and send 2FA code
+    const code = await business.generate2FACode(username)
+    const user = await business.getUserByUsername(username)
+    await emailSystem.send2FACode(user.email, code)
+
+    res.redirect("/twofa?username=" + username)
+})
+
+/**
+ * Shows the 2FA code entry page.
+ * @route GET /twofa
+ */
+app.get("/twofa", function (req, res) {
+    res.render("2fa", { username: req.query.username, message: req.query.message })
+})
+
+/**
+ * Handles 2FA code verification.
+ * @route POST /twofa
+ */
+app.post("/twofa", async function (req, res) {
+    const username = req.body.username
+    const code = req.body.code
+
+    const valid = await business.verify2FACode(username, code)
+
+    if (!valid) {
+        res.redirect("/twofa?username=" + username + "&message=Invalid or expired code")
+        return
+    }
+
+    // start session only after 2FA is verified
     const key = await business.startSession(username)
     res.cookie("sessionkey", key)
     res.redirect("/")

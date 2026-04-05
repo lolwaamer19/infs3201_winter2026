@@ -248,6 +248,14 @@ async function deleteSession(key) {
 async function logAccess(username, url, method) {
     await store.logAccess(username, url, method)
 }
+/**
+ * gets a user by username
+ * @param {string} username
+ * @returns {Promise<Object|null>}
+ */
+async function getUserByUsername(username) {
+    return await store.findUser(username)
+}
 
 
 module.exports = {
@@ -263,5 +271,6 @@ module.exports = {
     logAccess,
     checkLogin,
     generate2FACode,
-    verify2FACode
+    verify2FACode,
+    getUserByUsername
 }
