@@ -259,6 +259,45 @@ async function lockAccount(username) {
     )
 }
 
+const fs = require("fs")
+const path = require("path")
+
+/**
+ * returns list of documents for an employee
+ * @param {string} employeeId
+ * @returns {Promise<Array>}
+ */
+async function getEmployeeDocuments(employeeId) {
+    const database = await connect()
+    return await database.collection("documents").find({ employeeId: employeeId }).toArray()
+}
+
+/**
+ * saves a document record for an employee
+ * @param {string} employeeId
+ * @param {string} filename
+ * @param {string} originalName
+ * @returns {Promise<void>}
+ */
+async function saveDocument(employeeId, filename, originalName) {
+    const database = await connect()
+    await database.collection("documents").insertOne({
+        employeeId: employeeId,
+        filename: filename,
+        originalName: originalName,
+        uploadedAt: new Date()
+    })
+}
+
+/**
+ * counts documents for an employee
+ * @param {string} employeeId
+ * @returns {Promise<number>}
+ */
+async function countDocuments(employeeId) {
+    const database = await connect()
+    return await database.collection("documents").countDocuments({ employeeId: employeeId })
+}
 module.exports = {
     getEmployees,
     findEmployee,
@@ -277,5 +316,8 @@ module.exports = {
     delete2FACode,
     incrementFailedAttempts,
     resetFailedAttempts,
-    lockAccount
+    lockAccount,
+    getEmployeeDocuments,
+    saveDocument,
+    countDocuments
 }
