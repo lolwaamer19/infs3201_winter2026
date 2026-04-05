@@ -21,7 +21,7 @@ app.use(cookieParser())
  * @returns {Promise<void>}
  */
 async function checkAuth(req, res, next) {
-    if (req.path === "/login" || req.path === "/logout") {
+    if (req.path === "/login" || req.path === "/logout" || req.path === "/twofa") {
         next()
         return
     }

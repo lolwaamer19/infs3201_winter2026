@@ -1,4 +1,3 @@
-const nodemailer = require("nodemailer")
 
 /**
  * Sends an email. Currently outputs to console only.
