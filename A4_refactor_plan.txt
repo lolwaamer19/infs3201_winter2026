@@ -1,1 +1,31 @@
-A4_refactor_plan.txt 
+A4 Refactor Plan
+
+
+1. COLLECTIONS THAT WILL CHANGE
+
+- shifts: will add an "employees" array field that embeds employee ObjectIds directly
+- assignments: will be removed after migration is complete
+- employees: will keep employeeId field for now but _id will be used for references in shifts
+
+2. PERSISTENCE FUNCTIONS TO MODIFY OR REMOVE
+
+- getAssignments() : will be removed (assignments collection is being dropped)
+- findAssignment() : will be removed
+- addAssignment() : will be removed
+- getEmployeeShifts() : will be updated to query shifts where employees array contains the employee ObjectId
+- addAssignment will be replaced by a new function that pushes an ObjectId into the shift's employees array
+
+3. BUSINESS LOGIC CHANGES
+- No major changes to business logic, but functions that relied on the assignments
+  collection will now work through the embedded employees array in shifts
+
+4. HOW EMBEDDED ARRAYS AFFECT UPDATE OPERATIONS
+
+- Adding an employee to a shift will use $push to add their ObjectId to the employees array
+- Removing an employee from a shift will use $pull to remove their ObjectId
+- Querying shifts for an employee will use $in or direct match on the employees array
+
+5. RISKS AND COMPLICATIONS
+- If transform_db.js is run twice it could duplicate ObjectIds in the employees array
+- The assignments collection must not be deleted until we verify the migration worked
+- Any code still using employeeId/shiftId strings must be updated to use ObjectIds
